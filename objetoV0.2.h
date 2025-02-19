@@ -125,17 +125,182 @@ void VERIFY_ERROR (int erro, char* arquivo, int linha, const char* funcao)
 printf ("\n\tlinha %d\n", __LINE__);
 
 /////////////////////////////////////////////////////////////////
-// GESTÃO DE MEMÓRIA
+// TIPO MEMÓRIA
 
-////////////////// VARIÁVEIS
-int nivel = 0; // salva quantas chaves já foram abertas no programa
+////////////////// DEFINIÇÃO DO TIPO MEMORIA
+typedef struct semPtr_memoria semPtr_memoria;
+typedef        semPtr_memoria*       memoria;
+typedef struct semPtr_memoria
+{
+    memoria prox; // ponteiro para próxima memória da pilha
+    void*  dados; // ponteiro para os dados armazenados
+    int    nivel; // guarda a data de validade do tipo de dado
+}
+semPtr_memoria;
+
+/**
+ * Para: Programador
+ * Descrição: Reserva memória com uma segurança. Desnecessário considerando o resto da biblioteca, já que outras funções de criação de dados serão mais apetitosas.
+*/   
+void* mallocarSimples (size_t tam) 
+{
+    void* tmp = malloc (tam); 
+
+    verificarErro (tmp == NULL); 
+    
+    return tmp;
+}
+
+////////////////// CONSTRUTOR
+memoria nova_memoria (void* ptr, int nivel)
+{
+    memoria tmp = (memoria) mallocarSimples (sizeof (semPtr_memoria));
+
+    tmp->nivel = nivel;
+    tmp->prox  =  NULL;
+    tmp->dados =   ptr;
+
+    return tmp;
+}
+
+////////////////// DESTRUTOR
+void limpar_memoria (memoria *mem)
+{
+    verificarErro (  mem == NULL || *mem == NULL);
+    verificarErro ((*mem)->dados         == NULL);
+
+    free ((*mem)->dados);
+    free  (*mem);
+
+    mem = NULL;
+}
+
+/////////////////////////////////////////////////////////////////
+// TIPO GARBAGE COLLECTOR
+
+////////////////// DEFINIÇÃO DO TIPO GARBAGE COLLECTOR
+typedef struct semPtr_ColetorDeLixo semPtr_ColetorDeLixo;
+typedef        semPtr_ColetorDeLixo*       ColetorDeLixo;
+typedef struct semPtr_ColetorDeLixo
+{
+    memoria topo; // denota o topo da pilha de memória
+
+    int nivel; // denota a data de validade do tipo
+}
+semPtr_ColetorDeLixo;
+ColetorDeLixo coletor_de_lixo;
+
+////////////////// CONSTRUTOR
+ColetorDeLixo novo_ColetorDeLixo ()
+{
+    ColetorDeLixo tmp = (ColetorDeLixo) mallocarSimples 
+    (
+        sizeof (semPtr_ColetorDeLixo)
+    );
+
+    tmp->nivel = 0;
+
+    // célula cabeça
+    tmp->topo = nova_memoria (mallocarSimples (sizeof (char)), 0);
+
+    return tmp;
+}
+
+/**
+ * Para: Programador
+ * Descrição: Adiciona um ponteiro no coletor
+*/  
+void adicionarNo_ColetorDeLixo (ColetorDeLixo cdl, void* ptr)
+{
+    verificarErro (cdl       == NULL);
+    verificarErro (cdl->topo == NULL);
+
+    memoria nova_mem = nova_memoria (ptr, cdl->nivel);
+
+    nova_mem->prox = cdl->topo->prox;
+    cdl->topo->prox = nova_mem;    
+}
+
+/**
+ * Para: Programador
+ * Descrição: Apaga o primeiro ponteiro
+*/  
+void limparTopoDo_ColetorDeLixo (ColetorDeLixo cdl)
+{
+    verificarErro (cdl             == NULL);
+    verificarErro (cdl->topo       == NULL);
+    verificarErro (cdl->topo->prox == NULL);
+
+    memoria tmp = cdl->topo->prox;
+
+    cdl->topo->prox = cdl->topo->prox->prox;
+
+    limpar_memoria (&tmp);
+}
+
+/**
+ * Para: Programador
+ * Descrição: Pega o nível do topo da pilha
+*/  
+int nivelDoTopoDo_ColetorDeLixo (ColetorDeLixo cdl)
+{
+    verificarErro (cdl             == NULL);
+    verificarErro (cdl->topo       == NULL);
+    verificarErro (cdl->topo->prox == NULL);
+
+    return cdl->topo->prox->nivel;
+}
+
+/**
+ * Para: Programador
+ * Descrição: Avisa o CDL que chaves foram abertas.
+*/   
+void subirNivel_ColetorDeLixo (ColetorDeLixo cdl)
+{
+    cdl->nivel ++;
+}
+
+/**
+ * Para: Programador
+ * Descrição: Avisa o CDL que chaves foram fechadas.
+*/   
+void descerNivel_ColetorDeLixo (ColetorDeLixo cdl)
+{
+    cdl->nivel --;
+
+    while (nivelDoTopoDo_ColetorDeLixo (cdl) > cdl->nivel)
+    {
+        limparTopoDo_ColetorDeLixo (cdl);
+    }
+}
+
+////////////////// DESTRUTOR
+void limpar_ColetorDeLixo (ColetorDeLixo *cdl)
+{
+    verificarErro (  cdl == NULL || *cdl == NULL);
+    verificarErro ((*cdl)->topo          == NULL);
+
+    memoria tmpProx = (*cdl)->topo->prox;
+
+    limpar_memoria (&(*cdl)->topo);
+
+    while (tmpProx != NULL)
+    {
+        memoria aux = tmpProx->prox;
+        limpar_memoria (&tmpProx);
+        tmpProx = aux;
+    }
+
+    free (*cdl);
+    *cdl = NULL;
+}
 
 /**
  * Para: Usuário
  * Descrição: Serve de chaves {}, mas se usadas corretamente, irão agir como garbage collector.
 */   
-#define M {nivel++;
-#define W nivel--;}
+#define M {subirNivel_ColetorDeLixo (coletor_de_lixo);
+#define W descerNivel_ColetorDeLixo (coletor_de_lixo);}
 
 /////////////////////////////////////////////////////////////////
 // FUNÇÕES DE RESERVA
@@ -151,13 +316,15 @@ void* mallocar (size_t tam)
     verificarErro (tmp == NULL); 
     memoriaTotal++; 
     lixo++; 
+
+    adicionarNo_ColetorDeLixo (coletor_de_lixo, tmp);
     
     return tmp;
 }
 
 /**
  * Para: Programador
- * Descrição: Um encapsulamento da função mallocar para facilitar o Programador. Novamente, existem sistemas melhores para reserva de memória nesta biblioteca. Todaria, são construídos acima destes dois.
+ * Descrição: Um encapsulamento da função mallocar para facilitar o Programador. Novamente, existem sistemas melhores para reserva de memória nesta biblioteca. Todavia, são construídos acima destes dois.
 */   
 #define reservar(qnts,tipo) \
 (semPtr_##tipo*) mallocar (qnts * sizeof (semPtr_##tipo));
