@@ -172,6 +172,8 @@ void limpar_memoria (memoria *mem)
     free ((*mem)->dados);
     free  (*mem);
 
+    lixo --;
+
     mem = NULL;
 }
 
@@ -246,9 +248,12 @@ int nivelDoTopoDo_ColetorDeLixo (ColetorDeLixo cdl)
 {
     verificarErro (cdl             == NULL);
     verificarErro (cdl->topo       == NULL);
-    verificarErro (cdl->topo->prox == NULL);
 
-    return cdl->topo->prox->nivel;
+    int resp = -1;
+
+    if (cdl->topo->prox != NULL) cdl->topo->prox->nivel;
+
+    return resp;
 }
 
 /**
@@ -268,8 +273,11 @@ void descerNivel_ColetorDeLixo (ColetorDeLixo cdl)
 {
     cdl->nivel --;
 
+    printf ("<%d %d>", nivelDoTopoDo_ColetorDeLixo (cdl) , cdl->nivel);
+
     while (nivelDoTopoDo_ColetorDeLixo (cdl) > cdl->nivel)
     {
+        printf ("<");
         limparTopoDo_ColetorDeLixo (cdl);
     }
 }
@@ -293,6 +301,10 @@ void limpar_ColetorDeLixo (ColetorDeLixo *cdl)
 
     free (*cdl);
     *cdl = NULL;
+
+    lixo ++; // uso a função de limpar memória no nó cabeça
+    // devo somar lixo para equilibrar ele, já que o nó cabeça 
+    // não é considerado memória.
 }
 
 /**
@@ -327,6 +339,28 @@ void* mallocar (size_t tam)
  * Descrição: Um encapsulamento da função mallocar para facilitar o Programador. Novamente, existem sistemas melhores para reserva de memória nesta biblioteca. Todavia, são construídos acima destes dois.
 */   
 #define reservar(qnts,tipo) \
-(semPtr_##tipo*) mallocar (qnts * sizeof (semPtr_##tipo));
+(tipo*) mallocar (qnts * sizeof (tipo));
+
+/////////////////////////////////////////////////////////////////
+// ORDEM DO PROGRAMA
+
+// substitui o main
+#define INICIO_DO_PROGRAMA \
+int main (void) \
+{ \
+coletor_de_lixo = novo_ColetorDeLixo (); \
+if (1)
+
+// substitui o return 0
+#define FIM_DO_PROGRAMA limpar_ColetorDeLixo (&coletor_de_lixo); return (0); }
+
+// substitui o finalizar 0
+#define DEBUGAR_FIM_DO_PROGRAMA \
+limpar_ColetorDeLixo (&coletor_de_lixo); \
+finalizar (0); }
+
+// faz o mesmo que o anterior, sem limpar a memória
+#define MATAR_PROGRAMA \
+finalizar (0); }
 
 #endif
