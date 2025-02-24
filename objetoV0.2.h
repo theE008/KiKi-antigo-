@@ -48,6 +48,13 @@
 #include   <stdio.h>
 
 /////////////////////////////////////////////////////////////////
+// PROTÓTIPOS
+
+typedef struct  semPtr_objeto semPtr_objeto;
+typedef         semPtr_objeto*       objeto;
+objeto adicionarLetraAoFinalDo_texto (objeto texto, char letra);
+
+/////////////////////////////////////////////////////////////////
 // DEFINIÇÕES DE LOOPS
 
 /**
@@ -174,6 +181,8 @@ void limpar_memoria (memoria *mem)
     free  (*mem);
 
     lixo --;
+
+    printf ("<");
 
     mem = NULL;
 }
@@ -328,6 +337,7 @@ void* mallocar (size_t tam)
     lixo++; 
 
     adicionarNo_ColetorDeLixo (coletor_de_lixo, tmp);
+    printf (">");
     
     return tmp;
 }
@@ -386,7 +396,7 @@ finalizar (0); }
 */   
 int pegar_tamanho_da_string (char* entrada)
 {
-    verificar_erro (entrada == NULL);
+    verificarErro (entrada == NULL);
     bool continuar = true;
     int tamanho = 0;
 
@@ -417,12 +427,10 @@ char* reservar_string (size_t tam)
 /////////////////////////////////////////////////////////////////
 // TIPO OBJETO
 
-////////////////// DEFINIÇÃO DO TIPO FUNÇÃO
-typedef objeto (*funcao) (objeto); // tipo função
-
 ////////////////// DEFINIÇÃO DO TIPO OBJETO
-typedef struct semPtr_objeto semPtr_objeto;
-typedef        semPtr_objeto*       objeto;
+typedef struct semPtr_objeto semPtr_objeto ;
+typedef        semPtr_objeto*       objeto ;
+typedef           objeto (*funcao) (objeto); // tipo função
 typedef struct semPtr_objeto
 {
     bool tipo; // complexo ou simples
@@ -448,7 +456,7 @@ semPtr_objeto;
 */ 
 objeto novo_objeto ()
 {
-    objeto tmp = reservar (1, objeto);
+    objeto tmp = (objeto) reservar (1, semPtr_objeto);
 
     tmp->tipo   = false;
     tmp->dado   =  '\0';
@@ -457,6 +465,96 @@ objeto novo_objeto ()
     tmp->alfa     = NULL;
 
     return tmp;
+}
+
+/**
+ * Para: Programador
+ * Descrição: Retorna um caractere.
+*/ 
+objeto novo_caractere (char* c)
+{
+    verificarErro (c == NULL);
+
+    objeto tmp = novo_objeto ();
+
+    tmp->dado = c [0];
+
+    return tmp;
+}
+
+/**
+ * Para: Programador
+ * Descrição: Retorna um texto configurado, mas vazio.
+*/ 
+objeto novo_textoVazio ()
+{
+    objeto resposta = novo_objeto ();
+
+    resposta->dado =  't'; // código do sistema para componente de texto
+    resposta->tipo = true; // para afirmar que ele é complexo
+
+    // células cabeça e cauda
+    resposta->alfa     = novo_caractere ("\0");
+    resposta->beta.obj = novo_caractere ("\0");
+
+    resposta->alfa->tipo     = true; // para fazer ambos serem limpos
+    resposta->beta.obj->tipo = true;
+
+    resposta->beta.obj->alfa = resposta->alfa;
+    resposta->alfa->beta = resposta->beta;
+
+    resposta->alfa->alfa         = NULL;
+    resposta->beta.obj->beta.obj = NULL;  
+
+    return resposta;
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Retorna um texto.
+*/ 
+objeto novo_texto (char* texto)
+{
+    objeto resposta = novo_textoVazio ();
+
+    if (texto != NULL)
+    {
+        int tamanho = pegar_tamanho_da_string (texto);
+
+        loop (x, tamanho)
+        {
+            adicionarLetraAoFinalDo_texto (resposta, texto [x]);
+        }
+    }
+
+    return resposta;
+}
+
+/////////////////////////////////////////////////////////////////
+// SETTERS ADITIVOS
+
+/**
+ * Para: Programador
+ * Descrição: Não tem como fazer um nome mais auto explicativo.
+*/ 
+objeto adicionarLetraAoFinalDo_texto (objeto texto, char letra)
+{
+    verificarErro (texto == NULL || texto->alfa == NULL || texto->beta.obj == NULL);
+
+    char a [2] =   " ";
+         a [0] = letra;
+    objeto   obj_letra = novo_caractere (a);
+             obj_letra->tipo = true; // para mostrar que os ponteiros merecem limpeza
+    
+    obj_letra->alfa = texto->beta.obj->alfa;
+    obj_letra->beta.obj   = texto->beta.obj;
+
+    texto->beta.obj->alfa->beta.obj = obj_letra;
+    texto->beta.obj->alfa           = obj_letra;
+
+    // não tem como verificar se constante. Textos não tem componentes
+
+    return texto;
 }
 
 /*\ FIM DA DEFINIÇÃO DA BIBLIOTECA OBJETO \*/ #endif

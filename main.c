@@ -22,5 +22,10 @@ M
     char* tesdvadte2 = reservar (5, char);
     char* tescdate2 = reservar (5, char);
     char* tesdvte2 = reservar (5, char);
+
+    objeto a = novo_objeto ();
+    objeto b = novo_caractere ("b");
+    objeto c = novo_textoVazio ();
+    objeto d = novo_texto ("dramaturgia");
 W 
 DEBUGAR_FIM_DO_PROGRAMA;
