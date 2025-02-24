@@ -853,7 +853,7 @@ short int comparar (objeto a, objeto b)
                 }
             }
         }
-    }
+    } 
 
     return resposta; // retorna null quando são iguais. Retorna o componente que os diferencia se o achar.
 }

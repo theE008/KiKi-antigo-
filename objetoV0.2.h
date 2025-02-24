@@ -206,7 +206,7 @@ ColetorDeLixo novo_ColetorDeLixo ()
     tmp->topo = nova_memoria (mallocarSimples (sizeof (char)), 0);
 
     return tmp;
-}
+} 
 
 /**
  * Para: Programador
@@ -251,7 +251,7 @@ int nivelDoTopoDo_ColetorDeLixo (ColetorDeLixo cdl)
 
     int resp = -1;
 
-    if (cdl->topo->prox != NULL) cdl->topo->prox->nivel;
+    if (cdl->topo->prox != NULL) resp = cdl->topo->prox->nivel;
 
     return resp;
 }
@@ -273,11 +273,8 @@ void descerNivel_ColetorDeLixo (ColetorDeLixo cdl)
 {
     cdl->nivel --;
 
-    printf ("<%d %d>", nivelDoTopoDo_ColetorDeLixo (cdl) , cdl->nivel);
-
     while (nivelDoTopoDo_ColetorDeLixo (cdl) > cdl->nivel)
     {
-        printf ("<");
         limparTopoDo_ColetorDeLixo (cdl);
     }
 }
@@ -352,15 +349,17 @@ coletor_de_lixo = novo_ColetorDeLixo (); \
 if (1)
 
 // substitui o return 0
-#define FIM_DO_PROGRAMA limpar_ColetorDeLixo (&coletor_de_lixo); return (0); }
+#define FIM_DO_PROGRAMA \
+limpar_ColetorDeLixo (&coletor_de_lixo); \
+return (0); }
 
 // substitui o finalizar 0
 #define DEBUGAR_FIM_DO_PROGRAMA \
 limpar_ColetorDeLixo (&coletor_de_lixo); \
 finalizar (0); }
 
-// faz o mesmo que o anterior, sem limpar a memória
-#define MATAR_PROGRAMA \
+// faz o mesmo que o anterior, sem limpar a memória (para debug)
+#define PARAR_PROGRAMA \
 finalizar (0); }
 
 #endif
