@@ -42,9 +42,10 @@
 /////////////////////////////////////////////////////////////////
 // BIBLIOTECAS
 
-#include <stdlib.h>
-#include <stdarg.h> // para argumentos variados
-#include <stdio.h>
+#include <stdbool.h>
+#include  <stdlib.h>
+#include  <stdarg.h> // para argumentos variados
+#include   <stdio.h>
 
 /////////////////////////////////////////////////////////////////
 // DEFINIÇÕES DE LOOPS
@@ -336,30 +337,126 @@ void* mallocar (size_t tam)
  * Descrição: Um encapsulamento da função mallocar para facilitar o Programador. Novamente, existem sistemas melhores para reserva de memória nesta biblioteca. Todavia, são construídos acima destes dois.
 */   
 #define reservar(qnts,tipo) \
-(tipo*) mallocar (qnts * sizeof (tipo));
+(tipo*) mallocar(qnts * sizeof (tipo));
 
 /////////////////////////////////////////////////////////////////
 // ORDEM DO PROGRAMA
 
-// substitui o main
+/**
+ * Para: Usuário
+ * Descrição: Substitui o main
+*/ 
 #define INICIO_DO_PROGRAMA \
 int main (void) \
 { \
 coletor_de_lixo = novo_ColetorDeLixo (); \
 if (1)
 
-// substitui o return 0
+/**
+ * Para: Usuário
+ * Descrição: Substitui o return 0
+*/ 
 #define FIM_DO_PROGRAMA \
 limpar_ColetorDeLixo (&coletor_de_lixo); \
 return (0); }
 
-// substitui o finalizar 0
+/**
+ * Para: Usuário
+ * Descrição: Substitui o finalizar 0
+*/ 
 #define DEBUGAR_FIM_DO_PROGRAMA \
 limpar_ColetorDeLixo (&coletor_de_lixo); \
 finalizar (0); }
 
-// faz o mesmo que o anterior, sem limpar a memória (para debug)
+/**
+ * Para: Programador
+ * Descrição: Finaliza o programa sem apagar a memória
+ * (usado para debug)
+*/ 
 #define PARAR_PROGRAMA \
 finalizar (0); }
 
-#endif
+/////////////////////////////////////////////////////////////////
+// FUNÇÕES NECESSÁRIAS PARA O TEXTO
+
+/**
+ * Para: Programador
+ * Descrição: Retorna o tamanho de uma string 
+ * (necessário para mim, desnecessário pro usuário)
+*/   
+int pegar_tamanho_da_string (char* entrada)
+{
+    verificar_erro (entrada == NULL);
+    bool continuar = true;
+    int tamanho = 0;
+
+    while (continuar)
+    {
+        if (entrada [tamanho++] == '\0') continuar = false;
+    }
+
+    return tamanho - 1;
+}
+
+/**
+ * Para: Programador
+ * Descrição: Retorna um malloc de texto
+ * (necessário para mim, desnecessário pro usuário)
+*/   
+char* reservar_string (size_t tam)
+{ 
+    char* tmp = (char*) mallocar (tam * sizeof (char));
+
+    loop (x, tam) tmp [x] = ' ';
+
+    tmp [tam] = '\0';
+
+    return tmp;
+}
+
+/////////////////////////////////////////////////////////////////
+// TIPO OBJETO
+
+////////////////// DEFINIÇÃO DO TIPO FUNÇÃO
+typedef objeto (*funcao) (objeto); // tipo função
+
+////////////////// DEFINIÇÃO DO TIPO OBJETO
+typedef struct semPtr_objeto semPtr_objeto;
+typedef        semPtr_objeto*       objeto;
+typedef struct semPtr_objeto
+{
+    bool tipo; // complexo ou simples
+    char dado; // informação que esse objeto carrega
+
+    objeto alfa; // ponteiro pra outro objeto
+
+    union 
+    {
+        funcao func; // caso eu queira salvar uma função no objeto
+        objeto obj;  // o comum, salvar um objeto no objeto
+    }
+    beta;
+}
+semPtr_objeto;
+
+/////////////////////////////////////////////////////////////////
+// CONSTRUTORES
+
+/**
+ * Para: Usuário
+ * Descrição: Retorna uma nova instância de objeto vazio.
+*/ 
+objeto novo_objeto ()
+{
+    objeto tmp = reservar (1, objeto);
+
+    tmp->tipo   = false;
+    tmp->dado   =  '\0';
+
+    tmp->beta.obj = NULL;
+    tmp->alfa     = NULL;
+
+    return tmp;
+}
+
+/*\ FIM DA DEFINIÇÃO DA BIBLIOTECA OBJETO \*/ #endif
