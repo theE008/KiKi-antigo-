@@ -530,8 +530,133 @@ objeto novo_texto (char* texto)
     return resposta;
 }
 
+/**
+ * Para: Programador
+ * Descrição: Retorna um campo, não totalmente estruturado.
+*/
+objeto novo_campoSemComponente (char* nome, objeto conteudo)
+{
+    verificarErro (nome     == NULL);
+    verificarErro (conteudo == NULL);
+    verificarErro (!conteudo-> tipo);
+    verificarErro (conteudo->dado != 't' && conteudo->dado != 'o'); // t é o código para texto | o é o código para complexo
+
+    objeto tmp = novo_objeto ();
+
+    tmp->tipo = true;
+    tmp->dado =  'c';
+    
+    tmp->alfa = novo_texto (nome);
+
+    tmp->beta.obj = conteudo;
+
+    return tmp;
+}
+
+/**
+ * Para: Programador
+ * Descrição: Retorna um compnente, não totalmente estruturado.
+*/
+objeto novo_componenteSemCampo (objeto campo)
+{
+    verificarErro (campo == NULL);
+    verificarErro (!campo-> tipo);
+    verificarErro (campo->dado != 'c');
+
+    objeto tmp = novo_objeto ();
+    tmp->tipo  = true;
+    tmp->dado  =  'k';
+
+    tmp->beta.obj = campo;
+
+    return tmp;
+}
+
+/**
+ * Para: Programador
+ * Descrição: Retorna um compnente, o usuário não deveria acessar, para reduzir a complexidade do que ele deve acessar.
+*/
+objeto novo_componente (char* nome, objeto obj)
+{
+    return novo_componenteSemCampo (novo_campoSemComponente (nome, obj));
+}
+
+/**
+ * Para: Programador
+ * Descrição: O usuário não deveria precisar dizer que o objeto é complexo.
+*/
+objeto novo_objetoComplexo ()
+{
+    objeto tmp = novo_objeto ();
+    tmp->tipo  = true;
+    tmp->dado  =  'o';
+
+    tmp->alfa  = novo_componente ("cabeca", novo_texto ("vazio"));
+    tmp->beta.obj  = tmp->alfa;
+
+    return tmp;
+}
+
+/**
+ * Para: Programador
+ * Descrição: O usuário não deveria precisar converter objeto de volta a texto.
+*/
+char* novo_chars (objeto texto)
+{
+    verificarErro (texto == NULL);
+    verificarErro (texto->tipo != true);
+    verificarErro (texto->dado != 't');
+
+    char* resp = reservar_string (tamanho (texto) + 1);
+    int ptr = 0;
+
+    objeto index = texto->alfa->beta.obj;
+
+    while (index != texto->beta.obj && index != NULL)
+    {
+        resp [ptr++] = index->dado;
+
+        index = index->beta.obj;
+    }
+
+    resp [ptr] = '\0';
+
+    return resp;
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Permite a definição de um objeto complexo estruturadamente. 
+ * Usado para passar vários argumentos como um objeto em uma função.
+*/
+objeto nova_listagem (char* nome, objeto comp, ...)
+{
+    objeto tmp = novo_objeto ();
+
+    va_list args;
+    va_start (args, comp);
+
+    char* n = nome;
+    objeto t = comp;
+
+    while (t != NULL)
+    {
+        adicionar (tmp, n, t);
+        
+        n = va_arg (args, char*);
+        if (n == NULL) break; // Para evitar acessar argumento inválido
+
+        t = va_arg (args, objeto);
+        if (t == NULL) break;
+    }
+
+    va_end (args);
+
+    return tmp;
+}
+
 /////////////////////////////////////////////////////////////////
-// SETTERS ADITIVOS
+// ADDERS
 
 /**
  * Para: Programador
@@ -555,6 +680,55 @@ objeto adicionarLetraAoFinalDo_texto (objeto texto, char letra)
     // não tem como verificar se constante. Textos não tem componentes
 
     return texto;
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Adiciona um componente no objeto.
+*/ 
+objeto adicionar (objeto obj, char* nome, objeto cmp)
+{
+    verificarErro (obj       == NULL);
+    verificarErro (cmp       == NULL);
+
+    if (obj->tipo == false && obj->dado == '\0')
+    { 
+        obj->tipo = true;
+        obj->dado =  'o'; // tranformar em tipo complexo antes
+        obj->alfa  = novo_componente ("cabeca", novo_texto ("vazio"));
+        obj->beta.obj  = obj->alfa;
+
+        objeto componente = novo_componente (nome, cmp);
+
+        obj->beta.obj->alfa = componente; 
+        obj->beta.obj       = componente;
+    }
+    else if (obj->tipo == true && obj->dado == 'o')
+    {
+        objeto componente = novo_componente (nome, cmp);
+
+        obj->beta.obj->alfa = componente; 
+        obj->beta.obj       = componente;
+    }
+    else verificarErro (1);
+
+    // verificar se o valor não é constante
+    objeto mod = novo_texto ("constante");
+    objeto inv = pegar (obj, "modificador"); 
+    if (inv != NULL && inv->beta.obj != NULL) 
+        verificarErro (comparar (mod, inv->beta.obj->beta.obj) == 0.0);
+    CLEAR_OBJECT (&mod);
+
+    return obj;
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Adiciona um componente de texto no objeto.
+*/ 
+objeto adicionarTexto (objeto obj, char* a, char* b)
+{
+    return adicionar (obj, a, novo_texto (b));
 }
 
 /*\ FIM DA DEFINIÇÃO DA BIBLIOTECA OBJETO \*/ #endif
