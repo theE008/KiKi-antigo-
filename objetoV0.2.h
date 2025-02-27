@@ -52,7 +52,13 @@
 
 typedef struct  semPtr_objeto semPtr_objeto;
 typedef         semPtr_objeto*       objeto;
+
 objeto adicionarLetraAoFinalDo_texto (objeto texto, char letra);
+objeto adicionar (objeto obj, char* nome, objeto cmp);
+short int comparar (objeto a, objeto b);
+objeto pegar (objeto obj, char* nome);
+char* novo_chars (objeto texto);
+int tamanho (objeto obj);
 
 /////////////////////////////////////////////////////////////////
 // DEFINIÇÕES DE LOOPS
@@ -89,7 +95,7 @@ void finalizar (int val)
      
     printf 
     (
-        "\n\n\t%s\n\t%s '%d' %s\n\n\t'%d' %s\n", 
+        "\n\n\t%s\n\t%s '%d' %s\n\n\t'%ld' %s\n", 
         "FIM DO PROGRAMA", "Finalizado com um total de", 
         lixo, "lixo", memoriaTotal, "memoria usada"
     );
@@ -182,7 +188,7 @@ void limpar_memoria (memoria *mem)
 
     lixo --;
 
-    printf ("<");
+    //printf ("<");
 
     mem = NULL;
 }
@@ -337,7 +343,7 @@ void* mallocar (size_t tam)
     lixo++; 
 
     adicionarNo_ColetorDeLixo (coletor_de_lixo, tmp);
-    printf (">");
+    //printf (">");
     
     return tmp;
 }
@@ -384,7 +390,7 @@ finalizar (0); }
  * (usado para debug)
 */ 
 #define PARAR_PROGRAMA \
-finalizar (0); }
+finalizar (0);
 
 /////////////////////////////////////////////////////////////////
 // FUNÇÕES NECESSÁRIAS PARA O TEXTO
@@ -717,7 +723,7 @@ objeto adicionar (objeto obj, char* nome, objeto cmp)
     objeto inv = pegar (obj, "modificador"); 
     if (inv != NULL && inv->beta.obj != NULL) 
         verificarErro (comparar (mod, inv->beta.obj->beta.obj) == 0.0);
-    CLEAR_OBJECT (&mod);
+    //CLEAR_OBJECT (&mod);
 
     return obj;
 }
@@ -730,5 +736,648 @@ objeto adicionarTexto (objeto obj, char* a, char* b)
 {
     return adicionar (obj, a, novo_texto (b));
 }
+
+/**
+ * Para: Usuário
+ * Descrição: Concatena o texto.
+*/ 
+objeto concatenar (objeto a, objeto b)
+{
+    verificarErro (a == NULL);
+    verificarErro (b == NULL);
+    verificarErro (a->tipo != true && a->dado != 't');
+    verificarErro (b->tipo != true && b->dado != 't');
+    verificarErro (b->alfa == NULL);
+
+    char* txt = novo_chars (a);
+
+    objeto texto = novo_texto (txt);
+
+    objeto index = b->alfa->beta.obj;
+
+    while (index != b->beta.obj && index != NULL)
+    {
+        adicionarLetraAoFinalDo_texto (texto, index->dado);
+
+        index = index->beta.obj;
+    }
+
+    // não tem como verificar se constante. Textos não tem componentes
+
+    return texto;
+}
+
+/////////////////////////////////////////////////////////////////
+// GETTERS
+
+/**
+ * Para: Usuário
+ * Descrição: Retorna um dos componentes do objeto. 
+ * O componente é retornado como si, e não como componente.
+*/ 
+objeto pegar (objeto obj, char* nome)
+{
+    verificarErro (obj  == NULL);
+    verificarErro (nome == NULL);
+    verificarErro (obj->alfa == NULL);
+    verificarErro (obj->tipo != true);
+    verificarErro (obj->dado !=  'o');
+
+    objeto texto = novo_texto (nome);
+
+    objeto resposta = NULL;
+
+    objeto index = obj->alfa->alfa;
+
+    while (index != NULL && resposta == NULL)
+        if (index->beta.obj != NULL && index->beta.obj->alfa != NULL && comparar (index->beta.obj->alfa, texto) == 0)
+            resposta = index;
+        else index = index->alfa;
+
+    //CLEAR_OBJECT (&texto);
+
+    return resposta; // se não, ele retorna NULL
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Pega o tamanho de objetos de texto.
+*/ 
+int tamanho (objeto obj)
+{
+    verificarErro (obj       == NULL);
+    verificarErro (obj->tipo != true);
+    verificarErro (obj->dado !=  't');
+
+    int resposta = -1;
+    objeto index = obj->alfa;
+
+    while (index != obj->beta.obj && index != NULL) 
+    { 
+        resposta++;
+
+        index = index->beta.obj;
+    }
+
+    return resposta;
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Pega o tamanho de objetos de texto.
+*/ 
+objeto duplicar (objeto obj)
+{
+    objeto resp = NULL;
+
+    if (obj != NULL) // se for NULL, retorna NULL
+    {
+        if (obj->dado == 't') // tratamento especial, caso seja um texto
+        {
+            verificarErro (obj->alfa == NULL);
+
+            resp = novo_textoVazio ();
+
+            objeto index = obj->alfa->beta.obj;
+
+            while (index != obj->beta.obj && index != NULL)
+            {
+                adicionarLetraAoFinalDo_texto (resp, index->dado);
+
+                index = index->beta.obj;
+            }
+        }
+        else if (obj->dado == 'o') 
+        {
+            verificarErro (obj->alfa == NULL);
+
+            resp = novo_objetoComplexo ();
+
+            objeto index = obj->alfa->alfa; 
+
+            while (index != NULL)
+            {
+                verificarErro (index->beta.obj == NULL);
+
+                char * a = novo_chars (index->beta.obj->alfa);
+                adicionar (resp, a, duplicar (index->beta.obj->beta.obj));
+
+                //free (a); lixo --;
+
+                index = index->alfa;
+            }
+        }
+        else // tratamento comum
+        {        
+            resp =  novo_objeto (); 
+            resp->tipo = obj->tipo;
+            resp->dado = obj->dado;
+
+            resp->alfa = duplicar (obj->alfa);
+            resp->beta.obj = duplicar (obj->beta.obj);
+        }
+    }
+
+    return resp;
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Retorna o tipo do objeto.
+*/ 
+objeto tipo (objeto obj)
+{
+    objeto resp;
+    objeto t;
+
+    if (obj == NULL) resp = novo_texto ("nulo");
+    else 
+    {
+        if (obj->tipo == true)
+            switch (obj->dado)
+            {
+                case 't':
+                    resp = novo_texto ("texto");
+                break;
+
+                case 'c':
+                    resp = novo_texto ("campo");
+                break;
+
+                case 'k':
+                    resp = novo_texto ("componente");
+                break;
+
+                case 'o':
+                    t = pegar (obj, "tipo");
+                    if (t == NULL) resp = novo_texto ("desconhecido");
+                    else if (t->beta.obj != NULL) resp = duplicar (t->beta.obj->beta.obj);
+                    else resp = novo_texto ("bomba"); // pois quebraria
+                break;
+                
+                default:
+                    resp = novo_texto ("desconhecido");
+                break;
+            }
+        else // só pode ser objeto vazio e caractere
+            if (obj->dado == '\0') resp = novo_texto ("vazio");
+            else resp = novo_texto ("caractere");
+    }
+
+    return resp;
+}
+
+/////////////////////////////////////////////////////////////////
+// COMPARADORES
+
+/**
+ * Para: Usuário
+ * Descrição: Retorna um inteiro da diferença entre os dois objetos.
+ * Zero significa iguais.
+ * Um significa o segundo elemento é maior. 
+ * Menos um significa o primeiro elemento é maior.
+*/ 
+short int comparar (objeto a, objeto b)
+{
+    short int resposta = 0;
+
+    if (a == NULL)
+    {
+        if (b == NULL) resposta = 0; // se ambos forem NULL
+        else // se A for NULL e B não for
+        {
+            resposta = 1;
+        }
+    }
+    else // se A não for NULL
+    {
+        if (b == NULL) // se B for, retorna A
+        {
+            resposta = -1;
+        }
+        else // se ambos existirem
+        {
+            if (a->tipo != b->tipo) resposta = (a->tipo > b->tipo)? -1 : 1;
+            else
+            {
+                if (a->dado != b->dado) resposta = (a->dado)? -1 : 1; // se os dados forem diferentes também
+                else // se não houver diferenças na estrutura de si mesmos
+                {
+                    if (a->dado == 't') // se for texto, tem que verificar um a um
+                    {
+                        objeto indexa = a->alfa;
+                        objeto indexb = b->alfa;
+
+                        while (indexa != NULL && indexb != NULL && !resposta)
+                        {
+                            resposta = (indexa->dado != indexb->dado)?(indexa->dado > indexb->dado)?-1:1:0;
+
+                            indexa = indexa->beta.obj;
+                            indexb = indexb->beta.obj;
+                        }
+
+                        if (!resposta)
+                        {
+                            if (indexa == NULL) resposta += 1;
+                            if (indexb == NULL) resposta -= 1;
+                        }
+                    }
+                    else resposta = comparar(a->alfa, b->alfa);
+
+                    if (!resposta)
+                    if (a->dado != 't')
+                    {
+                        resposta = comparar (a->beta.obj, b->beta.obj);
+                    }
+                }
+            }
+        }
+    } 
+
+    return resposta; // retorna null quando são iguais. Retorna o componente que os diferencia se o achar.
+}
+
+/////////////////////////////////////////////////////////////////
+// IMPRIMIR
+
+/**
+ * Para: Programador
+ * Descrição: Dá tab no printar.
+*/ 
+void TABNAR_COD (int dif, int TAB_NO_OBJ) {if (TAB_NO_OBJ != -1) {loop (x, TAB_NO_OBJ) {printf ("\t");}TAB_NO_OBJ += dif;}}
+
+/**
+ * Para: Programador
+ * Descrição: Imprime um objeto.
+ * Designado ao programador, já que uma alternativa que printa vários está logo abaixo.
+*/ 
+void PRINT_OBJECT (objeto obj)
+{
+    static int TAB_NO_OBJ = 0;
+
+    if (obj == NULL) printf ("#nulo");
+    else 
+    {
+        if (obj->tipo) // objetos complexos
+        {
+            switch (obj->dado) // para definir um tratamento para cada tipo
+            {
+                case 'c':
+                    verificarErro (obj->alfa == NULL || obj->beta.obj == NULL);
+
+                    PRINT_OBJECT (obj->alfa); // imprimir o nome
+                    printf (": ");
+
+                    if (obj->beta.obj->dado == 't') printf ("\""); else if (TAB_NO_OBJ == 0) printf ("{");
+                    PRINT_OBJECT (obj->beta.obj);
+                    if (obj->beta.obj->dado == 't') printf ("\""); else if (TAB_NO_OBJ == 0) printf ("}");                        
+                break;
+
+                case 'k':
+                    printf ("{");
+                    PRINT_OBJECT (obj->beta.obj);
+                    printf ("}");
+                break;
+
+                case 'o':
+                    verificarErro (obj->alfa == NULL || obj->beta.obj == NULL);
+                    
+                    if (TAB_NO_OBJ != -1) TAB_NO_OBJ ++; printf ("{"); if (TAB_NO_OBJ != -1) printf ("\n");
+
+                    objeto index = obj->alfa->alfa;
+
+                    while (index != NULL)
+                    {
+                        verificarErro (index->beta.obj == NULL);
+
+                        TABNAR_COD (0, TAB_NO_OBJ); PRINT_OBJECT (index->beta.obj);
+
+                        index = index->alfa;
+
+                        if (index != NULL) printf (","); if (TAB_NO_OBJ != -1) printf ("\n");
+                    }
+
+                    if (TAB_NO_OBJ != -1) TAB_NO_OBJ --;
+
+                    TABNAR_COD (0, TAB_NO_OBJ); printf ("}");
+                break;
+
+                case 't': // se for um texto
+                    verificarErro (obj->alfa == NULL || obj->beta.obj == NULL);
+
+                    if (obj->alfa->beta.obj == obj->beta.obj) printf ("#textoVazio");
+                    else // se realmente tiver um texto
+                    {
+                        objeto index = obj->alfa->beta.obj;
+
+                        while (index != obj->beta.obj && index != NULL)
+                        {
+                            printf ("%c", index->dado);
+
+                            index = index->beta.obj;
+                        }
+                    }
+                break;
+
+                default:
+                    printf ("\n\tTIPO DESCONHECIDO '%c'", obj->dado);
+                    verificarErro (1001); // printando (10) dado sem existencia (01)
+                break;
+            }
+        }
+        else // objetos simples (só existem 2)
+        {
+            if (obj->dado == '\0') // se for objeto vazio
+            {
+                printf ("#vazio");
+            }
+            else // se for caractere
+            {
+                printf ("%c", obj->dado);   
+            }
+        }
+    }
+}
+
+/**
+ * Para: Programador
+ * Descrição: Imprime vários elementos. 
+ * Também é obsolento, já que abaixo, tem uma versão qual você não precisa incluir não para funcionar.
+*/ 
+void PRINT_ALL (objeto obj, ...)
+{
+    va_list args;
+    va_start (args, obj);
+
+    objeto b = obj; // Corrigido para um ponteiro
+
+    while (b != NULL)
+    {
+        PRINT_OBJECT (b); // Chama a função de imprimir corretamente
+
+        b = va_arg (args, objeto);
+    }
+
+    va_end (args);
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Imprimir definitivo, simplesmente o ideal.
+*/ 
+#define imprimir(...) PRINT_ALL (__VA_ARGS__, NULL);
+
+/////////////////////////////////////////////////////////////////
+// SALVAR E CARREGAR
+
+/**
+ * Para: Programador
+ * Descrição: Salva um byte por vez.
+*/ 
+void SAVE_BYTE (int val, FILE* arquivo)
+{
+    unsigned char byte = val; 
+    fwrite (&byte, sizeof (unsigned char), 1, arquivo);
+}
+
+/**
+ * Para: Programador
+ * Descrição: Salva um objeto em um arquivo.
+*/ 
+void SAVE_OBJECT (objeto obj, FILE* arquivo)
+{
+    if (obj == NULL)
+    {
+        // escreve zero para falar de objeto vazio
+        SAVE_BYTE (0x00, arquivo);
+    }
+    else 
+    {
+        // escreve um para falar de objeto com dado
+        SAVE_BYTE (0x01, arquivo);
+
+        if (obj->tipo)
+        {
+            // escreve um para falar de objeto complexo
+            SAVE_BYTE (0x01, arquivo);
+
+            // salva o dado
+            SAVE_BYTE (obj->dado, arquivo);
+
+            switch (obj->dado)
+            {
+                case 'o':
+                    verificarErro (obj->alfa == NULL); // dado inexistente
+
+                    objeto componente = obj->alfa->alfa;
+
+                    while 
+                    (
+                        componente             != NULL && // acessa os componentes
+                        componente->beta.obj       != NULL && 
+                        componente->beta.obj->alfa != NULL &&
+                        componente->beta.obj->beta.obj != NULL
+                    ) 
+                    {
+                        SAVE_OBJECT (componente->beta.obj->alfa, arquivo); // nome do componente
+                        SAVE_OBJECT (componente->beta.obj->beta.obj, arquivo); // o objeto no componente
+
+                        componente = componente->alfa;
+                    }
+
+                    SAVE_BYTE (0x00, arquivo); // faz um \0 para finalizar
+                break;
+
+                case 't':
+                    verificarErro (obj->alfa == NULL || obj->beta.obj == NULL); // dado inexistente
+
+                    objeto letra = obj->alfa->beta.obj;
+
+                    while (letra != NULL && letra != obj->beta.obj)
+                    {
+                        SAVE_BYTE (letra->dado, arquivo); // salva os caracteres
+
+                        letra = letra->beta.obj;
+                    }
+
+                    SAVE_BYTE (0x00, arquivo); // faz um \0 para finalizar
+                break;
+
+                default:
+                    verificarErro (3001); // salvando (30) dado sem existencia (01)
+                break;
+            }
+        }
+        else
+        {
+            // escreve um para falar de objeto simples
+            SAVE_BYTE (0x00, arquivo);
+
+            // salva o dado por fim
+            SAVE_BYTE (obj->dado, arquivo);
+        }
+    }
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Versão amigável. Só se passa o caminho e objeto.
+*/ 
+void salvar (objeto obj, char* caminho)
+{
+    FILE* arquivo = fopen (caminho, "ab");
+
+    SAVE_OBJECT (obj, arquivo);
+
+    fclose (arquivo);
+}
+
+/**
+ * Para: Programador
+ * Descrição: Lê um byte.
+*/ 
+int READ_BYTE (FILE* arquivo)
+{
+    unsigned char byte;
+
+    size_t lidos = fread (&byte, sizeof (unsigned char), 1, arquivo); // Lê 1 byte
+
+    verificarErro (lidos != 1);
+
+    return byte;
+}
+
+/**
+ * Para: Programador
+ * Descrição: Transforma os dados do arquivo em um objeto.
+*/ 
+objeto READ_OBJECT (FILE* arquivo)
+{
+    objeto resp = NULL;
+
+    int atual = READ_BYTE (arquivo); // existe?
+
+    if (atual == 0x00) resp = NULL; // não existe
+    else 
+    {
+        bool tipo = READ_BYTE (arquivo); // tipo
+        char dado = READ_BYTE (arquivo); // dado
+
+        if (tipo) // tipo complexo
+        {
+            switch (dado)
+            {
+                case 'o':
+                    resp = novo_objeto ();
+
+                    objeto obj = READ_OBJECT (arquivo); // pega o nome
+                    char*  txt = novo_chars (obj);
+                    //CLEAR_OBJECT (&obj);
+
+                    obj = READ_OBJECT (arquivo);
+
+                    adicionar (resp, txt, obj);
+
+                    free (txt); lixo --;
+                break;
+
+                case 't':
+                    resp = novo_textoVazio ();
+
+                    char letra = READ_BYTE (arquivo);
+
+                    while (letra != 0x00)
+                    {
+                        adicionarLetraAoFinalDo_texto (resp, (char) letra);
+
+                        letra = READ_BYTE (arquivo);
+                    }
+                break;
+
+                default:
+                    verificarErro (4001); // lendo (40) dado sem existencia (01)
+                break;
+            }
+        }
+        else // tipo simples
+        {
+            if (dado == '\0') // se for objeto vazio
+                resp = novo_objeto ();
+            else // se for caractere
+            {
+                char tmp [2] =   "";
+                     tmp [0] = dado;
+
+                resp = novo_caractere (tmp);
+            }
+        }
+    }
+
+    return resp;
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Versão amigável.
+*/ 
+objeto ler (char* caminho)
+{
+    FILE* arquivo = fopen (caminho, "rb");
+
+    objeto resp = READ_OBJECT (arquivo);
+
+    fclose (arquivo);
+    return resp;
+}
+
+/////////////////////////////////////////////////////////////////
+// SEMÂNTICA
+
+////////////////// PARA FUNÇÕES OBJETIFICADAS
+#define seTiverArgumento(var, arg) objeto var = ((temArgumentos) && (pegar(argumentos, arg) != NULL) && (pegar(argumentos, arg)->beta != NULL))? pegar(argumentos, arg)->beta->beta:NULL; if (var != NULL)
+#define adicionarTextoNaResposta(nome,txt) adicionar (resposta, nome, novo_texto (txt)); // dá pra fazer função
+#define adicionarNaResposta(nome,comp) adicionar (resposta, nome, comp); // da pra fazer função
+#define apagarResposta if (resposta != NULL) limpar (resposta);
+#define pegarArgumento(arg) pegar (argumentos, arg)
+#define temArgumentos (argumentos!=NULL)
+
+////////////////// TRATAMENTO EM TEXTO
+#define fimDoLoopEmTexto } free (_texto_); lixo --;
+#define loopEmTexto(txt,carac,var) \
+char* _texto_ = novo_chars (txt);  \
+loop (tamanho (txt),var)           \
+{ char carac = _texto_ [var];      \
+    if (1)
+
+////////////////// CONSTRUTORES
+
+// Irei usar um padrão de colocar o nome na parte 'inicio' do objeto.
+#define novoConstrutor(o_a, que) \
+objeto nov##o_a##_##que (objeto argumentos) \
+{ \
+objeto resposta = novo_objeto ();    \
+adicionar (resposta, "tipo", novo_texto (#que)); \
+if (1)
+
+////////////////// FUNÇÕES
+
+// cria um objeto sem tipo para retorno. Talvez no futuro, ter o tipo 'resposta'.
+#define novaFuncao(nome) \
+objeto nome (objeto argumentos) \
+{ \
+    objeto resposta = novo_objeto (); \
+    if (1)
+
+// limpa o retorno e finaliza função
+    #define funcaoSemRetorno \
+    seTiverArgumento (config, "modificador") { objeto txt = novo_texto ("uso unico"); if (comparar (config, txt) == 0) limpar (argumentos); limpar (txt);}\
+    limpar (resposta); \
+    return NULL; \
+}
+
+// retorna a resposta
+#define funcaoComRetorno \
+    seTiverArgumento (config, "modificador") { objeto txt = novo_texto ("uso unico"); if (comparar (config, txt) == 0) limpar (argumentos); limpar (txt);}\
+ return resposta; }
 
 /*\ FIM DA DEFINIÇÃO DA BIBLIOTECA OBJETO \*/ #endif
