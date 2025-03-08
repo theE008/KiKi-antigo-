@@ -1,31 +1,29 @@
-#include "objetoV0.2.h"
+// gcc -o main main.c objv3/obj.c && main
+
+#include "objv3/matematica.h"
 
 /////////////////////////////////////////////////////////////////
 // MAIN
 
-INICIO_DO_PROGRAMA
+INICIO_DO_PROGRAMA;
 M
-    M
-        char* teste = reservar (5, char);
-        char* teste3 = reservar (5, char);
-        char* t4e2 = reservar (5, char);
-        char* a8a = reservar (5, char);
-        char* tesfde2 = reservar (5, char);
-    W
+    objeto a = novo_numeroNatural    (O);
+    objeto b = novo_numeroInteiro    (O);
+    objeto c = novo_numeroRacional   (O);
+    objeto d = novo_numeroReal       (O);
+    objeto f = novo_numeroImaginario (O);
+    objeto g = novo_numeroReal 
+    (nova_listagem 
+        (
+            "sinal"     , novo_texto ("-"),
+            "numero"    , novo_texto ("123456789"),
+            "decimal"   , novo_texto ("4444"),
+            "irracional", novo_texto ("pi"),
+        O),         
+    O);
 
-    // finalizar (0);
+    imprimir (a, b, c, d, f, g, O);
 
-    char* tesate2 = reservar (5, char);
-    char* tesfddte2 = reservar (5, char);
-    char* tevste2 = reservar (5, char);
-    char* tesdte2 = reservar (5, char);
-    char* tesdvadte2 = reservar (5, char);
-    char* tescdate2 = reservar (5, char);
-    char* tesdvte2 = reservar (5, char);
-
-    objeto a = novo_objeto ();
-    objeto b = novo_caractere ("b");
-    objeto c = novo_textoVazio ();
-    objeto d = novo_texto ("dramaturgia");
-W 
+    imprimirNumero (g, O);
+W
 DEBUGAR_FIM_DO_PROGRAMA;
