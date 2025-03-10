@@ -18,11 +18,15 @@ typedef           objeto (*funcao) (objeto, ...); // tipo função
 
 objeto adicionar (objeto obj, char* nome, objeto cmp);
 objeto alterar   (objeto obj, char* nome, objeto cmp);
+objeto executar (objeto obj, objeto func);
 objeto pegar     (objeto obj, char* nome);
 short int comparar (objeto a, objeto b);
-void   imprimir  (objeto obj, ...);
+objeto imprimir  (objeto obj, ...);
 objeto nova_funcao (funcao func);
 objeto duplicar  (objeto obj);
+
+void sohImprimirComponentes ();
+void naoImprimirComponentes ();
 
 /////////////////////////////////////////////////////////////////
 // PROTÓTIPOS DO SISTEMA
@@ -177,8 +181,8 @@ objeto nov##o_a##_##que (objeto argumentos, ...) \
 // altera o protótipo usado pelo construtor
 #define usarDeBase(construtor) \
 objeto BIBOBJ_TIPO = BIBOBJ_PICKBETA (BIBOBJ_PICKBETA (pegar (resposta, "tipo"))); \
-resposta = construtor (argumentos, O);\
-alterar (resposta, "tipo", BIBOBJ_TIPO);
+resposta = construtor (argumentos, O); \
+alterar (resposta, "tipo", duplicar (BIBOBJ_TIPO));
 
 ////////////////// FUNÇÕES
 

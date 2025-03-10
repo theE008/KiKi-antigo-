@@ -28,7 +28,10 @@ funcaoSemRetorno;
 novoConstrutor (o, numeroNatural)
 M
     pegarParaResposta ("numero", novo_texto ("0"));
-    //adicionarNaResposta ("imprimir", nova_funcao (imprimirNumero));
+
+    M0
+        adicionarNaResposta ("imprimir", nova_funcao (imprimirNumero));
+    W0
 W
 funcaoComRetorno;
 

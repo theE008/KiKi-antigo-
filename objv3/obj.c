@@ -616,11 +616,16 @@ objeto nova_funcao (funcao func)
     return tmp;
 }
 
+/**
+ * Para: Usuário
+ * Descrição: Executa um objeto de função passando outros objetos dentro.
+*/
 objeto executar (objeto obj, objeto func)
 {
-    verificarErro (obj == NULL || func == NULL || func->beta.func != NULL);
-    
-    return func->beta.obj->beta.obj->beta.func (obj, NULL);
+    verificarErro (obj == NULL || func == NULL || func->beta.func == NULL);
+    verificarErro (func->dado != 'f');
+
+    return func->beta.func (obj, NULL);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -839,12 +844,17 @@ objeto duplicar (objeto obj)
                 verificarErro (index->beta.obj == NULL);
 
                 char * a = novo_chars (index->beta.obj->alfa);
+                //printf ("<%c>", index->beta.obj->beta.obj->dado);
                 adicionar (resp, a, duplicar (index->beta.obj->beta.obj));
-
+                
                 //free (a); lixo --;
-
+                
                 index = index->alfa;
             }
+        }
+        else if (obj->dado == 'f')
+        {
+            resp = nova_funcao (obj->beta.func);        
         }
         else // tratamento comum
         {        
@@ -990,6 +1000,9 @@ void TABNAR_COD (int dif, int TAB_NO_OBJ) {if (TAB_NO_OBJ != -1) {loop (x, TAB_N
  * Descrição: Imprime um objeto.
  * Designado ao programador, já que uma alternativa que printa vários está logo abaixo.
 */ 
+bool imprimirComponentes = false;
+void sohImprimirComponentes () {imprimirComponentes = true ;}
+void naoImprimirComponentes () {imprimirComponentes = false;}
 void PRINT_OBJECT (objeto obj)
 {
     static int TAB_NO_OBJ = 0;
@@ -1022,9 +1035,9 @@ void PRINT_OBJECT (objeto obj)
                     verificarErro (obj->alfa == NULL || obj->beta.obj == NULL);
 
                     objeto func = pegar (obj, "imprimir");
-                    if (func != NULL)
+                    if (func != NULL && !imprimirComponentes)
                     {
-                        executar (obj, func);
+                        executar (obj, func->beta.obj->beta.obj);
                     }
                     else 
                     {
@@ -1094,7 +1107,7 @@ void PRINT_OBJECT (objeto obj)
  * Para: Usuário
  * Descrição: Imprimir definitivo, simplesmente o ideal.
 */ 
-void imprimir (objeto obj, ...)
+objeto imprimir (objeto obj, ...)
 {
     va_list args;
     va_start (args, obj);
@@ -1109,6 +1122,8 @@ void imprimir (objeto obj, ...)
     }
 
     va_end (args);
+
+    return NULL;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -1262,7 +1277,7 @@ objeto READ_OBJECT (FILE* arquivo)
 
                     adicionar (resp, txt, obj);
 
-                    free (txt); lixo --;
+                    //free (txt); lixo --;
                 break;
 
                 case 't':
