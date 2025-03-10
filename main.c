@@ -75,16 +75,27 @@ M
             "sinal"     , novo_texto ("-"),
             "numero"    , novo_texto ("123456789"),
             "decimal"   , novo_texto ("4444"),
-            "irracional", novo_texto ("pi"),
+            // "irracional", novo_texto ("pi"),
         O),         
     O);
 
     objeto dup = duplicar (g);
 
-    sohImprimirComponentes ();
+    //sohImprimirComponentes ();
 
-    imprimir (g, dup, O);
+    //adicionar (g, "gambiarra", dup);
 
+    executar (dup, nova_funcao (imprimir));
+
+    objeto nL = novo_texto ("\n");
+
+    imprimir (nL , g, O);
+
+    
+
+    objeto resp = somar (g, g, O);
+
+    imprimir (resp, O);
     //executar (g, pegar (test2, "imprimir"));
 
 W

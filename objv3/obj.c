@@ -47,7 +47,7 @@
 objeto adicionarLetraAoFinalDo_texto (objeto texto, char letra);
 objeto adicionar (objeto obj, char* nome, objeto cmp);
 short int comparar (objeto a, objeto b);
-objeto pegar (objeto obj, char* nome);
+objeto BIBOBJ_PICK (objeto obj, char* nome);
 char* novo_chars (objeto texto);
 int tamanho (objeto obj);
 
@@ -546,6 +546,7 @@ objeto novo_objetoComplexo ()
  * Para: Programador
  * Descrição: O usuário não deveria precisar converter objeto de volta a texto.
 */
+char* BIBOBJ_NVCHR (objeto texto) {return novo_chars (texto);}
 char* novo_chars (objeto texto)
 {
     verificarErro (texto == NULL);
@@ -687,7 +688,7 @@ objeto adicionar (objeto obj, char* nome, objeto cmp)
 
     // verificar se o valor não é constante
     objeto mod = novo_texto ("constante");
-    objeto inv = pegar (obj, "modificador");
+    objeto inv = BIBOBJ_PICK (obj, "modificador");
     if (inv != NULL && inv->beta.obj != NULL) 
         verificarErro (comparar (mod, inv->beta.obj->beta.obj) == 0.0);
     //CLEAR_OBJECT (&mod);
@@ -746,7 +747,7 @@ objeto alterar (objeto obj, char* nome, objeto cmp)
     verificarErro (obj->tipo != true);
     verificarErro (obj->dado !=  'o');
 
-    objeto tmp = pegar (obj, nome);
+    objeto tmp = BIBOBJ_PICK (obj, nome);
 
     tmp->beta.obj->beta.obj = cmp;
 
@@ -761,7 +762,7 @@ objeto alterar (objeto obj, char* nome, objeto cmp)
  * Descrição: Retorna um dos componentes do objeto. 
  * O componente é retornado como si, e não como componente.
 */ 
-objeto pegar (objeto obj, char* nome)   
+objeto BIBOBJ_PICK (objeto obj, char* nome)   
 {
     verificarErro (obj  == NULL);
     verificarErro (nome == NULL);
@@ -782,6 +783,8 @@ objeto pegar (objeto obj, char* nome)
 
     return resposta; // se não, ele retorna NULL
 }
+objeto pegar (objeto obj, char* nome)
+{return BIBOBJ_PICK (obj, nome)->beta.obj->beta.obj;}
 
 /**
  * Para: Usuário
@@ -898,7 +901,7 @@ objeto tipo (objeto obj)
                 break;
 
                 case 'o':
-                    t = pegar (obj, "tipo");
+                    t = BIBOBJ_PICK (obj, "tipo");
                     if (t == NULL) resp = novo_texto ("desconhecido");
                     else if (t->beta.obj != NULL) resp = duplicar (t->beta.obj->beta.obj);
                     else resp = novo_texto ("bomba"); // pois quebraria
@@ -1034,7 +1037,7 @@ void PRINT_OBJECT (objeto obj)
                 case 'o':
                     verificarErro (obj->alfa == NULL || obj->beta.obj == NULL);
 
-                    objeto func = pegar (obj, "imprimir");
+                    objeto func = BIBOBJ_PICK (obj, "imprimir");
                     if (func != NULL && !imprimirComponentes)
                     {
                         executar (obj, func->beta.obj->beta.obj);
@@ -1337,7 +1340,7 @@ objeto ler (char* caminho)
  * Descrição: Inicia algumas definições importantes do programa.
 */ 
 static void iniciar_biblioteca (void) __attribute__ ((constructor));
-static void iniciar_biblioteca (void) 
+static void iniciar_biblioteca (void)
 {
     coletor_de_lixo = novo_ColetorDeLixo ();
 }

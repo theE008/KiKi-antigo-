@@ -62,3 +62,43 @@ M
     pegarParaResposta ("lateral", novo_texto ("0"));
 W 
 funcaoComRetorno;
+
+novoConstrutor (o, numero)
+M 
+    usarDeBase (novo_numeroRacional);
+W
+funcaoComRetorno;
+
+/////////////////////////////////////////////////////////////////
+// MÉTODOS
+
+
+
+novaFuncao (somar)
+M
+    se (forPrimeiroArgumento)
+    M0
+        seTiverArgumento (num, "numero") adicionar (resposta, "numero", num);
+    W0
+    ouSe (temArgumentos e pegar (argumentos, "numero") existir) 
+    M0
+        objeto resp = pegar (resposta,   "numero");
+        objeto args = pegar (argumentos, "numero");
+
+        int a = tamanho (resp);
+        int b = tamanho (args);
+
+        se (a > b) loopEmTexto (resp, c, x)
+        M
+            printf ("(%c)",c);
+        W
+        fimDoLoopEmTexto;
+
+        seNao loopEmTexto (args, c, x)
+        M 
+            printf ("'%c'",c);
+        W
+        fimDoLoopEmTexto;
+    W0
+W
+funcaoComRetorno; 

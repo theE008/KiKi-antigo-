@@ -22,8 +22,10 @@ objeto executar (objeto obj, objeto func);
 objeto pegar     (objeto obj, char* nome);
 short int comparar (objeto a, objeto b);
 objeto imprimir  (objeto obj, ...);
+char* BIBOBJ_NVCHR (objeto texto);
 objeto nova_funcao (funcao func);
 objeto duplicar  (objeto obj);
+int tamanho (objeto obj);
 
 void sohImprimirComponentes ();
 void naoImprimirComponentes ();
@@ -37,6 +39,7 @@ void naoImprimirComponentes ();
  * mas que matam a biblioteca se não tiver.
 */
 void VERIFY_ERROR (int erro, char* arquivo, int linha, const char* funcao);
+objeto BIBOBJ_PICK (objeto obj, char* nome);
 objeto BIBOBJ_PICKALFA (objeto obj);
 objeto BIBOBJ_PICKBETA (objeto obj);
 void BIBOBJ_SNCDL ();
@@ -148,22 +151,23 @@ objeto nova_listagem (char* nome, objeto comp, ...);
 #define e &&
 
 ////////////////// PARA FUNÇÕES OBJETIFICADAS
-#define seTiverArgumento(var, arg) objeto var = ((temArgumentos) && (pegar(argumentos, arg) != NULL) && (BIBOBJ_PICKBETA(pegar(argumentos, arg)) != NULL))? BIBOBJ_PICKBETA(BIBOBJ_PICKBETA(pegar(argumentos, arg))):NULL; if (var != NULL)
+#define pegarParaResposta(arg,holder) M0 seTiverArgumento(var##__LINE__, arg) adicionar (resposta, arg, duplicar (var##__LINE__));else{adicionarNaResposta(arg, holder);} W0
+#define seTiverArgumento(var, arg) objeto var = ((temArgumentos) && (BIBOBJ_PICK(argumentos, arg) != NULL) && (BIBOBJ_PICKBETA(BIBOBJ_PICK(argumentos, arg)) != NULL))? BIBOBJ_PICKBETA(BIBOBJ_PICKBETA(BIBOBJ_PICK(argumentos, arg))):NULL; if (var != NULL)
 #define copiarArgumentoNaResposta(var,arg) seTiverArgumento(var, arg) adicionar (resposta, arg, duplicar (var))
 #define adicionarTextoNaResposta(nome,txt) adicionar (resposta, nome, novo_texto (txt)); // dá pra fazer função
 #define adicionarNaResposta(nome,comp) adicionar (resposta, nome, comp); // da pra fazer função
 #define apagarResposta if (resposta != NULL) limpar (resposta);
 #define pegarArgumento(arg) pegar (argumentos, arg)
+#define forPrimeiroArgumento nao argumentoAtual
 #define temArgumentos (argumentos!=NULL)
 #define O NULL
-#define pegarParaResposta(arg,holder) M0 seTiverArgumento(var##__LINE__, arg) adicionar (resposta, arg, duplicar (var##__LINE__));else{adicionarNaResposta(arg, holder);} W0
 
 ////////////////// TRATAMENTO EM TEXTO
 #define loopEmTexto(txt,carac,var) \
-char* _texto_ = novo_chars (txt);  \
-loop (tamanho (txt),var)           \
+do {char* _texto_ = BIBOBJ_NVCHR (txt);  \
+loop (var,tamanho (txt))           \
 { char carac = _texto_ [var]; if (1)
-#define fimDoLoopEmTexto }
+#define fimDoLoopEmTexto }}while(0)
 
 ////////////////// CONSTRUTORES
 
@@ -174,15 +178,17 @@ objeto nov##o_a##_##que (objeto argumentos, ...) \
     objeto resposta = novo_objeto ();    \
     va_list args; \
     va_start (args, argumentos); \
+    int argumentoAtual = 0; \
     adicionar (resposta, "tipo", novo_texto (#que)); \
     do \
     {
 
 // altera o protótipo usado pelo construtor
 #define usarDeBase(construtor) \
-objeto BIBOBJ_TIPO = BIBOBJ_PICKBETA (BIBOBJ_PICKBETA (pegar (resposta, "tipo"))); \
+do { \
+objeto BIBOBJ_TIPO = BIBOBJ_PICKBETA (BIBOBJ_PICKBETA (BIBOBJ_PICK (resposta, "tipo"))); \
 resposta = construtor (argumentos, O); \
-alterar (resposta, "tipo", duplicar (BIBOBJ_TIPO));
+alterar (resposta, "tipo", duplicar (BIBOBJ_TIPO)); }while (0);
 
 ////////////////// FUNÇÕES
 
@@ -192,18 +198,20 @@ objeto nome (objeto argumentos, ...) \
 { \
     va_list args; \
     va_start (args, argumentos); \
+    int argumentoAtual = 0; \
     objeto resposta = novo_objeto (); \
+    adicionar (resposta, "tipo", novo_texto ("resposta")); \
     do \
     {
 
 // limpa o retorno e finaliza função
     #define funcaoSemRetorno \
-    if (argumentos != NULL) argumentos = va_arg (args, objeto);} while (argumentos != NULL); \
+    if (argumentos != NULL) argumentos = va_arg (args, objeto);} while (argumentos != NULL && ++argumentoAtual); \
     return NULL; \
 }
 
 // retorna a resposta
-#define funcaoComRetorno  if (argumentos != NULL) argumentos = va_arg (args, objeto);} while (argumentos != NULL); return resposta;}
+#define funcaoComRetorno  if (argumentos != NULL) argumentos = va_arg (args, objeto);} while (argumentos != NULL && ++argumentoAtual); return resposta;}
 
 
 
