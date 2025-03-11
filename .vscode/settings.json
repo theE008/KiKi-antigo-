@@ -59,6 +59,7 @@
   "files.associations": {
     "*.lash": "c",
     "*.lass": "c",
-    "header.h": "c"
+    "header.h": "c",
+    "matematica.h": "c"
   }
 }

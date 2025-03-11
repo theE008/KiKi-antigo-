@@ -24,6 +24,7 @@ short int comparar (objeto a, objeto b);
 objeto imprimir  (objeto obj, ...);
 char* BIBOBJ_NVCHR (objeto texto);
 objeto nova_funcao (funcao func);
+char* novo_chars (objeto texto);
 objeto duplicar  (objeto obj);
 int tamanho (objeto obj);
 

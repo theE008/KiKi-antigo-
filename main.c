@@ -91,11 +91,13 @@ M
 
     imprimir (nL , g, O);
 
-    
+    objeto a = novo_numeroRacional (nova_listagem ("numero", novo_texto ("999"), O), O);
+    objeto b = novo_numeroRacional (nova_listagem ("numero", novo_texto ("2"), O), O);
 
-    objeto resp = somar (g, g, O);
+    imprimir (nL, nL, a, nL, b, O);
 
-    imprimir (resp, O);
+    objeto resp = somar (b, a, O);  imprimir (nL, resp, O);
+
     //executar (g, pegar (test2, "imprimir"));
 
 W

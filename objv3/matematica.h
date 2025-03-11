@@ -1,4 +1,5 @@
 #include "header.h"
+#include <string.h>
 
 /////////////////////////////////////////////////////////////////
 // IMPRIMIR
@@ -72,8 +73,6 @@ funcaoComRetorno;
 /////////////////////////////////////////////////////////////////
 // MÉTODOS
 
-
-
 novaFuncao (somar)
 M
     se (forPrimeiroArgumento)
@@ -85,20 +84,41 @@ M
         objeto resp = pegar (resposta,   "numero");
         objeto args = pegar (argumentos, "numero");
 
-        int a = tamanho (resp);
-        int b = tamanho (args);
+        int a = tamanho   (resp);
+        int b = tamanho   (args);
+        int m = (a>b)? a : b + 1;
 
-        se (a > b) loopEmTexto (resp, c, x)
-        M
-            printf ("(%c)",c);
-        W
-        fimDoLoopEmTexto;
+        char *resultado = (char*) malloc ((m + 1) * sizeof (char));
+        se (nao resultado) verificarErro (1);
+        resultado[m] = '\0';
+        int carry = 0, i = a - 1, j = b - 1, k = m - 1;
 
-        seNao loopEmTexto (args, c, x)
-        M 
-            printf ("'%c'",c);
-        W
-        fimDoLoopEmTexto;
+        char* ca = novo_chars (resp);
+        char* cb = novo_chars (args);
+
+        while (i >= 0 || j >= 0 || carry)
+        {
+            int digitoA = (i >= 0) ? ca[i] - '0' : 0;
+            int digitoB = (j >= 0) ? cb[j] - '0' : 0;
+            int soma = digitoA + digitoB + carry;
+
+            resultado[k] = (soma % 10) + '0';
+            carry = soma / 10;
+
+            i--;
+            j--;
+            k--;
+        }
+
+        char r0 = resultado[0];
+        if (nao ('0' <= r0 e r0 <= '9'))
+        {
+            memmove (resultado, resultado + 1, m); // Remove o zero extra no início
+        }
+
+        alterar (resposta, "numero", novo_texto (resultado));
+
+        free (resultado);
     W0
 W
-funcaoComRetorno; 
+funcaoComRetorno;
