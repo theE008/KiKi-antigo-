@@ -31,6 +31,7 @@
  * 
  *   Somando todos, temos um total de 31 tipos do sistema possíveis.
  * 
+ *   04 - Memória
  *   03 - Ponteiro
  *   02 - Int
  *   01 - Manipulador
@@ -119,6 +120,7 @@ typedef               void *   ptr;
 
 // Tamanhos comuns
 int tamanhoDeByte = sizeof (byte );
+int tamanhodeChar = sizeof (char );
 int tamanhoDePtr  = sizeof (ptr  );
 int tamanhoDeInt  = sizeof (int  );
 
@@ -146,15 +148,22 @@ void imprimirPorBit (valor val, int tamanho)
     printf ("\n");
 }
 
-void imprimirEndereco(void* ptr) {
-    unsigned char *bytes = (unsigned char*)&ptr;
-    for (int i = sizeof(ptr) - 1; i >= 0; i--) {
-        for (int j = 7; j >= 0; j--) {
-            printf("%d", (bytes[i] >> j) & 1);
+/**
+ * Para: Usuário
+ * Descrição: Imprime endereços no mesmo sistema usado acima.
+*/ 
+void imprimirEndereco (void* ptr) 
+{
+    unsigned char * bytes = (unsigned char *) & ptr;
+    for (int i = sizeof (ptr) - 1; i >= 0; i --) 
+    {
+        for (int j = 7; j >= 0; j --) 
+        {
+            printf ("%d", (bytes [i] >> j) & 1);
         }
-        printf(" ");
+        printf (" ");
     }
-    printf("\n");
+    printf ("\n");
 }
 
 
@@ -271,7 +280,7 @@ void anotar_int (valor manipulador, int y)
 */  
 void anotar_ptr (valor manipulador, ptr y)
 {
-    verificarErro (manipulador == NULL);
+    verificarErro (manipulador == NULL); // Não verifica se y é NULL, pois isto é usado para limpar trechos
 
     int x = pegar_indice (manipulador);
     atualizar_indice (manipulador, x + tamanhoDePtr);
@@ -286,7 +295,7 @@ void anotar_ptr (valor manipulador, ptr y)
 
 /**
  * Para: Usuário
- * Descrição: Retorna um valor int
+ * Descrição: Retorna um valor int.
  * 
  * Tamanho: (5 bytes)
  *  - 1 byte  de configuração
@@ -300,14 +309,13 @@ valor novo_int (int val)
 
     valor mnp = novo_manipulador (tmp);
 
-    // configuração
+    // Configuração
     anotar_byte (mnp, 96 + 2); // 96 = código rígido. 2 = código int
 
-    // dado
+    // Dado
     anotar_int (mnp, val);
 
     free (mnp);
-
     return tmp;
 }
 
@@ -316,11 +324,11 @@ valor novo_int (int val)
 
 /**
  * Para: Usuário
- * Descrição: Retorna um valor pointer
+ * Descrição: Retorna um valor pointer.
  * 
- * Tamanho: (1 + N bytes)
+ * Tamanho: (1 + PTR bytes)
  *  - 1 byte  de configuração
- *  - N bytes de pointer
+ *  - PTR bytes de pointer
 */  
 valor novo_ptr (ptr val)
 {
@@ -330,27 +338,163 @@ valor novo_ptr (ptr val)
 
     valor mnp = novo_manipulador (tmp);
 
-    // configuração
+    // Configuração
     anotar_byte (mnp, 96 + 3); // 96 = código rígido. 3 = código ptr
 
-    // dado
+    // Dado
     anotar_ptr (mnp, val);
 
     free (mnp);
-
     return tmp;
+}
+
+//////////////////////////////////////////////////
+// DEFINIÇÃO DO SUBTIPO MEMÓRIA
+
+/**
+ * Para: Usuário
+ * Descrição: Retorna uma memória, que segura o nível em que foi criada,
+ * o ponteiro para a próxima do stack, e o ponteiro para algo alocado 
+ * dinâmicamente.
+ * 
+ * Tamanho: (5 + 2 * PTR bytes)
+ *  - 1 byte  de configuração
+ *  - 4 bytes de int (para o nível)
+ *  - PTR bytes para o valor alocado
+ *  - PTR bytes para o próximo do stack
+*/  
+valor nova_memoria (ptr val, ptr prox, int nivel)
+{   
+    valor tmp = malloc (tamanhoDeByte + tamanhoDeInt + 2 * tamanhoDePtr);
+
+    verificarErro (tmp == NULL);
+    verificarErro (val == NULL);
+
+    valor mnp = novo_manipulador (tmp);
+
+    // Configuração
+    anotar_byte (mnp, 96 + 4); // 96 = código rígido. 4 = código memória
+
+    // Nível
+    anotar_int (mnp, nivel);
+
+    // Dado
+    anotar_ptr (mnp, val);
+
+    // Prox
+    anotar_ptr (mnp, prox); // pensei em deixar NULL, mas é melhor aproveitar a chamada da função
+
+    free (mnp);
+    return tmp;
+}
+
+// Função auxiliar: retorna o próximo nó na pilha de memória
+valor obterProximo (valor val) 
+{
+    return *(valor *)(val + tamanhoDeByte + tamanhoDeInt + tamanhoDePtr);
+}
+
+//////////////////////////////////////////////////
+// COLETOR DE LIXO (pilha de memória)
+
+// Definição da pilha
+valor pilhaDeMemoria;
+
+// Amarração da pilha
+__attribute__((constructor)) void construtor_pilhaDeMemoria () 
+{
+    ptr dummy = malloc (1);
+    
+    verificarErro (dummy == NULL);
+
+    pilhaDeMemoria = nova_memoria (dummy, NULL, -1);
+}
+
+int nivel = 0;
+// Adiciona um ponteiro na pilha de memória
+void registrarNaMemoria (ptr pon)
+{
+    verificarErro (pon == NULL);
+
+    valor tmp = nova_memoria (pon, pilhaDeMemoria, nivel); // <= garanta que irá pegar o termo seguinte da pilha, não a cabeça
+
+    pilhaDeMemoria = tmp;
+}
+
+void imprimirPilha () 
+{
+    valor atual = pilhaDeMemoria;
+
+    printf("=== PILHA DE MEMORIA ===\n");
+    while (atual != NULL) {
+        int nvl = *(int *)(atual + tamanhoDeByte);
+        ptr dado = *(ptr *)(atual + tamanhoDeByte + tamanhoDeInt);
+        printf("[Nivel: %d, Ponteiro: %p]\n", nvl, dado);
+
+        atual = obterProximo (atual);
+    }
+    printf("========================\n");
+}
+
+// Remove da pilha os elementos com nível superior ao nível global
+void limparPilha () 
+{
+    // Ponteiro para o nó atual e o próximo nó
+    valor atual = pilhaDeMemoria;
+    valor anterior = NULL;
+
+    // Percorre a pilha até encontrar um nível menor ou igual ao global
+    while (atual != NULL) 
+    {
+        // Pega o nível do nó atual
+        int nivelNo = *(int *)(atual + tamanhoDeByte);
+
+        // Se o nível do nó for menor ou igual ao nível global, para
+        if (nivelNo <= nivel) 
+        {
+            break;
+        }
+
+        // Atualiza a cabeça da pilha para o próximo nó
+        valor proximo = *(valor *)(atual + tamanhoDeByte + tamanhoDeInt + tamanhoDePtr);
+        
+        // Libera o nó atual (memória alocada)
+        free(*(ptr *)(atual + tamanhoDeByte + tamanhoDeInt)); // Libera o valor armazenado
+        free(atual);                           // Libera o nó
+
+        atual = proximo; // Avança para o próximo
+    }
+
+    // Atualiza a cabeça da pilha para o último nó válido
+    pilhaDeMemoria = atual;
 }
 
 //////////////////////////////////////////////////
 // MAIN
 
-int main ()
+int main() 
 {
-    int a = 444;
-    void * b = &a;
-    valor w = novo_ptr (b);
-    imprimirPorBit (w, tamanhoDePtr + 1);
-    imprimirEndereco (b);
+    int *a = malloc(sizeof(int));
+    int *b = malloc(sizeof(int));
+    int *c = malloc(sizeof(int));
+    *a = 42;
+    *b = 99;
+    *c = 123;
+
+    registrarNaMemoria(a); nivel++; // Nível 0
+    registrarNaMemoria(b); nivel++; // Nível 1
+    registrarNaMemoria(c); nivel++; // Nível 2
+
+    printf("Antes de limpar:\n");
+    imprimirPilha();
+
+    // Atualiza o nível global
+    nivel = -1;
+
+    limparPilha(); // Remove todos os elementos de nível > 1
+
+    printf("\nDepois de limpar:\n");
+    imprimirPilha();
 
     return 0;
 }

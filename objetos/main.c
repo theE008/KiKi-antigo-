@@ -75,28 +75,15 @@ M
             "sinal"     , novo_texto ("-"),
             "numero"    , novo_texto ("123456789"),
             "decimal"   , novo_texto ("4444"),
-            // "irracional", novo_texto ("pi"),
+            "irracional", novo_texto ("pi"),
         O),         
     O);
 
     objeto dup = duplicar (g);
 
-    //sohImprimirComponentes ();
+    sohImprimirComponentes ();
 
-    //adicionar (g, "gambiarra", dup);
-
-    executar (dup, nova_funcao (imprimir));
-
-    objeto nL = novo_texto ("\n");
-
-    imprimir (nL , g, O);
-
-    objeto a = novo_numeroRacional (nova_listagem ("numero", novo_texto ("999"), O), O);
-    objeto b = novo_numeroRacional (nova_listagem ("numero", novo_texto ("2"), O), O);
-
-    imprimir (nL, nL, a, nL, b, O);
-
-    objeto resp = somar (b, a, O);  imprimir (nL, resp, O);
+    imprimir (g, dup, O);
 
     //executar (g, pegar (test2, "imprimir"));
 
