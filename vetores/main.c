@@ -47,6 +47,8 @@
 #include  <stdarg.h> // para argumentos variados
 #include   <stdio.h>
 
+void registrarNaMemoria (ptr pon);
+
 //////////////////////////////////////////////////
 // ERRO, DEBUG E FINALIZAÇÃO
 
@@ -175,6 +177,7 @@ void imprimirEndereco (void* ptr)
  * Descrição: Constrói algo semelhante a um FILE*, só que para construção 
  * e leitura de valores.
 */  
+bool usadoPelaMemoria = false; // se for usado pela memória, não salva na pilha de memória
 valor novo_manipulador (valor val)
 {
     verificarErro (val == NULL);
@@ -370,7 +373,7 @@ valor nova_memoria (ptr val, ptr prox, int nivel)
     verificarErro (tmp == NULL);
     verificarErro (val == NULL);
 
-    valor mnp = novo_manipulador (tmp);
+    valor mnp = novo_manipulador (tmp); // <- remover isso para garantir que não aloque recursivamente
 
     // Configuração
     anotar_byte (mnp, 96 + 4); // 96 = código rígido. 4 = código memória
@@ -467,6 +470,17 @@ void limparPilha ()
 
     // Atualiza a cabeça da pilha para o último nó válido
     pilhaDeMemoria = atual;
+}
+
+void subirNaPilha ()
+{
+    nivel ++;
+}
+
+void descerNaPilha ()
+{
+    nivel --;
+    limparPilha ();
 }
 
 //////////////////////////////////////////////////
