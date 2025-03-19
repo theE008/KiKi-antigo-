@@ -31,6 +31,8 @@
  * 
  *   Somando todos, temos um total de 31 tipos do sistema possíveis.
  * 
+ *   06 - Texto
+ *   05 - Double
  *   04 - Memória
  *   03 - Ponteiro
  *   02 - Int
@@ -47,7 +49,7 @@
 #include  <stdarg.h> // para argumentos variados
 #include   <stdio.h>
 
-void registrarNaMemoria (ptr pon);
+#include  <string.h> // strlen
 
 //////////////////////////////////////////////////
 // ERRO, DEBUG E FINALIZAÇÃO
@@ -120,7 +122,11 @@ typedef unsigned char byte        ;
 typedef               byte * valor;
 typedef               void *   ptr;
 
+// Protótipos
+void registrarNaMemoria (ptr pon);
+
 // Tamanhos comuns
+int tamanhoDeDouble = sizeof (double);
 int tamanhoDeByte = sizeof (byte );
 int tamanhodeChar = sizeof (char );
 int tamanhoDePtr  = sizeof (ptr  );
@@ -192,6 +198,8 @@ valor novo_manipulador (valor val)
     // Escreve o ponteiro 'val' na segunda parte
     *((valor *) (tmp + tamanhoDeInt)) = val;
 
+    if (!usadoPelaMemoria) 
+    registrarNaMemoria (tmp);
     return tmp;
 }
 
@@ -231,6 +239,22 @@ valor pegar_valor (valor manipulador)
 
 /**
  * Para: Usuário
+ * Descrição: Retorna o próximo valor byte registrado no valor.
+*/  
+int pegarProximo_byte (valor manipulador)
+{
+    verificarErro (manipulador == NULL);
+
+    int x = pegar_indice (manipulador);
+    atualizar_indice (manipulador, x + tamanhoDeByte);
+
+    valor val = pegar_valor (manipulador);
+
+    return *((byte *) (val + x));
+}
+
+/**
+ * Para: Usuário
  * Descrição: Retorna o próximo valor inteiro registrado no valor.
 */  
 int pegarProximo_inteiro (valor manipulador)
@@ -243,6 +267,55 @@ int pegarProximo_inteiro (valor manipulador)
     valor val = pegar_valor (manipulador);
 
     return *((int *) (val + x));
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Retorna o próximo valor double registrado no valor.
+*/  
+double pegarProximo_double (valor manipulador)
+{
+    verificarErro (manipulador == NULL);
+
+    int x = pegar_indice (manipulador);
+    atualizar_indice (manipulador, x + tamanhoDeDouble);
+
+    valor val = pegar_valor (manipulador);
+
+    return *((double *) (val + x));
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Retorna o próximo valor string registrado no valor.
+*/  
+char * pegarProximo_string (valor manipulador)
+{
+    verificarErro (manipulador == NULL);
+
+    int x = pegar_indice (manipulador);
+
+    int tam = pegarProximo_inteiro (manipulador);
+    
+    atualizar_indice (manipulador, x + tamanhoDeInt + tam * tamanhodeChar);
+
+    char * texto = malloc (tam + 1);
+
+    verificarErro (texto == NULL);
+    registrarNaMemoria (texto);
+
+    valor val = pegar_valor (manipulador);
+
+    int y = 0;
+
+    for (; y < tam; y ++)
+    {
+        texto [y] = * ((char *) (val + x + tamanhoDeInt + y * tamanhodeChar));
+    }
+
+    texto [y] = '\0';
+
+    return texto;
 }
 
 /**
@@ -260,6 +333,8 @@ void anotar_byte (valor manipulador, byte y)
 
     *((byte *) (val + x)) = y;
 }
+void anotar_char (valor manipulador, char y) 
+{anotar_byte (manipulador, y);}
 
 /**
  * Para: Usuário
@@ -275,6 +350,44 @@ void anotar_int (valor manipulador, int y)
     valor val = pegar_valor (manipulador);
 
     *((int *) (val + x)) = y;
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Escreve um double na posição atual do valor.
+*/  
+void anotar_double (valor manipulador, double y)
+{
+    verificarErro (manipulador == NULL);
+
+    int x = pegar_indice (manipulador);
+    atualizar_indice (manipulador, x + tamanhoDeDouble);
+
+    valor val = pegar_valor (manipulador);
+
+    *((double *) (val + x)) = y;
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Escreve um string na posição atual do valor.
+*/  
+void anotar_string (valor manipulador, char* y)
+{
+    verificarErro (manipulador == NULL);
+
+    int x = pegar_indice (manipulador);
+
+    valor val = pegar_valor (manipulador);
+    int tam = strlen (y);
+
+    for (int z = 0; z < tam; z++)
+    {
+        
+       *((char *) (val + x + z * tamanhodeChar)) = y [z];
+    }
+
+    atualizar_indice (manipulador, x + tam * tamanhodeChar);
 }
 
 /**
@@ -318,7 +431,7 @@ valor novo_int (int val)
     // Dado
     anotar_int (mnp, val);
 
-    free (mnp);
+    registrarNaMemoria (tmp);
     return tmp;
 }
 
@@ -347,7 +460,36 @@ valor novo_ptr (ptr val)
     // Dado
     anotar_ptr (mnp, val);
 
-    free (mnp);
+    registrarNaMemoria (tmp);
+    return tmp;
+}
+
+//////////////////////////////////////////////////
+// DEFINIÇÃO DO SUBTIPO DOUBLE
+
+/**
+ * Para: Usuário
+ * Descrição: Retorna um valor double.
+ * 
+ * Tamanho: (1 + PTR bytes)
+ *  - 1 byte  de configuração
+ *  - PTR bytes de pointer
+*/  
+valor novo_double (double val)
+{
+    valor tmp = malloc (tamanhoDeByte + tamanhoDeDouble);
+
+    verificarErro (tmp == NULL);
+
+    valor mnp = novo_manipulador (tmp);
+
+    // Configuração
+    anotar_byte (mnp, 96 + 5); // 96 = código rígido. 5 = código double
+
+    // Dado
+    anotar_double (mnp, val);
+
+    registrarNaMemoria (tmp);
     return tmp;
 }
 
@@ -387,14 +529,52 @@ valor nova_memoria (ptr val, ptr prox, int nivel)
     // Prox
     anotar_ptr (mnp, prox); // pensei em deixar NULL, mas é melhor aproveitar a chamada da função
 
-    free (mnp);
-    return tmp;
+    if (!usadoPelaMemoria) registrarNaMemoria (tmp);
+    else free (mnp);
+    return tmp ;
 }
 
 // Função auxiliar: retorna o próximo nó na pilha de memória
 valor obterProximo (valor val) 
 {
     return *(valor *)(val + tamanhoDeByte + tamanhoDeInt + tamanhoDePtr);
+}
+
+//////////////////////////////////////////////////
+// SUBTIPO TEXTO
+
+/**
+ * Para: Usuário
+ * Descrição: Retorna um valor texto.
+ * 
+ * Tamanho: (5 + TAM bytes)
+ *  - 1 byte  de configuração
+ *  - 4 bytes (int) para tamanho do texto
+ *  - TAM bytes (char) para o texto em si
+*/  
+valor novo_texto (char * val)
+{
+    verificarErro (val == NULL);
+
+    int tam = strlen (val);
+
+    valor tmp = malloc (tamanhoDeByte + tamanhoDeInt + tam * tamanhodeChar);
+
+    verificarErro (tmp == NULL);
+
+    valor mnp = novo_manipulador (tmp);
+
+    // Configuração
+    anotar_byte (mnp, 96 + 6); // 96 = código rígido. 6 = código texto
+
+    // Tamanho
+    anotar_int (mnp, tam);
+
+    // Dado
+    anotar_string (mnp, val);
+
+    registrarNaMemoria (tmp);
+    return tmp;
 }
 
 //////////////////////////////////////////////////
@@ -419,9 +599,13 @@ void registrarNaMemoria (ptr pon)
 {
     verificarErro (pon == NULL);
 
+    usadoPelaMemoria = true;
+
     valor tmp = nova_memoria (pon, pilhaDeMemoria, nivel); // <= garanta que irá pegar o termo seguinte da pilha, não a cabeça
 
     pilhaDeMemoria = tmp;
+
+    usadoPelaMemoria = false;
 }
 
 void imprimirPilha () 
@@ -483,32 +667,99 @@ void descerNaPilha ()
     limparPilha ();
 }
 
+#define M {subirNaPilha ();
+#define W descerNaPilha ();}
+
+//////////////////////////////////////////////////
+// IMPRIMIR
+
+byte pegarConfiguracao (valor val)
+{
+    verificarErro (val == NULL);
+
+    return *(byte *) val;
+}
+
+void PRINT_VALUE (valor val)
+{
+    //imprimirPorBit (val, tamanhoDeDouble + tamanhoDeByte);
+
+    verificarErro (val == NULL);
+
+    valor mnp = novo_manipulador (val);
+
+    int config = pegarProximo_byte (mnp) - 96;
+
+    // printf ("<%d>", config);
+
+    switch (config)
+    {
+        case 5:
+            printf ("%lf", pegarProximo_double (mnp));
+        break;
+
+        case 6:
+            printf ("%s", pegarProximo_string (mnp));
+        break;
+
+        default:    
+            printf ("erro!!!!!!!!!!!!!!!");
+        break;
+    }
+}
+
+/**
+ * Para: Usuário
+ * Descrição: Imprimir definitivo, simplesmente o ideal.
+*/ 
+valor imprimir (valor val, ...)
+{
+    va_list args;
+    va_start (args, val);
+
+    valor b = val; // Corrigido para um ponteiro
+
+    while (b != NULL)
+    {
+        PRINT_VALUE (b); // Chama a função de imprimir corretamente
+
+        b = va_arg (args, valor);
+    }
+
+    va_end (args);
+
+    return NULL;
+}
+
+#define O NULL
+
 //////////////////////////////////////////////////
 // MAIN
 
-int main() 
-{
-    int *a = malloc(sizeof(int));
-    int *b = malloc(sizeof(int));
-    int *c = malloc(sizeof(int));
-    *a = 42;
-    *b = 99;
-    *c = 123;
+void main (void) 
+M
+    valor a = novo_double (0), b = novo_double (10);
 
-    registrarNaMemoria(a); nivel++; // Nível 0
-    registrarNaMemoria(b); nivel++; // Nível 1
-    registrarNaMemoria(c); nivel++; // Nível 2
+    imprimir (novo_texto ("Integral da funcao 1 entre '"), a, novo_texto ("' e '"), b, novo_texto ("': "), O);
+W
 
-    printf("Antes de limpar:\n");
-    imprimirPilha();
+//imprimirPorBit (c, 5 * tamanhodeChar + 1 * tamanhoDeByte + 1 * tamanhoDeInt);
 
-    // Atualiza o nível global
-    nivel = -1;
+/*
 
-    limparPilha(); // Remove todos os elementos de nível > 1
+void main (void) 
+M
+    M
+        valor a = novo_int (44);
+        valor b = novo_double (43.32);  
+
+        printf("Antes de limpar:\n");
+        imprimirPilha();    
+    W
 
     printf("\nDepois de limpar:\n");
     imprimirPilha();
 
-    return 0;
-}
+W
+
+*/
