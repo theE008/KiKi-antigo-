@@ -13,8 +13,8 @@
  *  -- PROPRIEDADES
  *  
  *  0 - valor morto
- *  0 - constante \_ Quando ambos estão 1, modificador rigido
- *  0 - maleavel  /  Quando ambos estão 0?
+ *  0 - constante \_ Quando ambos estão 1, modificador rígido
+ *  0 - maleável  /  Quando ambos estão 0?
  *  0 - FALTA DECIDIR
  * 
  *  -- SUBTIPO
@@ -38,6 +38,78 @@
  *   02 - Int
  *   01 - Manipulador
  *   00 - Vazio
+ * 
+ *   Organizando componentes de acordo com a forma decidida ser eventualmente a melhor. 
+ *   
+ *   20 - Número Imaginário
+ *   19 - Número Real
+ *   18 - Número Irracional
+ *   17 - Número Racional
+ *   16 - Número Inteiro
+ *   15 - Número Natural
+ *   14 - Complexo
+ *   13 - Componente
+ *   12 - Campo <- vai ser algo para nomear o objeto usado
+ *   11 - Função
+ *   10 - Arranjo
+ *   09 - Texto
+ *   08 - Manipulador
+ *   07 - Memória
+ *   06 - Configuração <- o byte de configuração. Vai ser retorno de uma das funções. E é melhor ser só o byte mesmo
+ *   05 - Ponteiro
+ *   04 - Double
+ *   03 - Int
+ *   02 - Char
+ *   01 - Byte
+ *   00 - Vazio
+ * 
+ *   Todos os tipos terão seus respectivos arquivos. Mas não suas respectivas bibliotecas, todos serão da mesma.
+ *   A divisão entre arquivos será utilizada pois todas as funções de todos os tipos, e todos os tipos em si vão
+ * precisar de declarar qual é a sua relação com todos os outros. 
+ *   Exemplo, uma eventual biblioteca de soma precisa somar números de todos os tipos, mas também somar bytes, e caso
+ * receba textos, enviar para a função de concatenação. Caso ela receba tipos que REALMENTE nem uma mente criativa conseguiria
+ * dizer o que fazer naquele contexto, aí sim dará erro. Mas a biblioteca deve ser estritamente fechadinha, sempre que possível.
+ *   Tem um bit de propriedade que ainda não está sendo usado. Provavelmente seria bom ter ele como mais um bit de tipo, para realmente
+ * poder eventualmente extrapolar, e fazer 63 subtipos na biblioteca.
+ *   Por exemplo o tipo língua, ou o tipo Neurônio. Pessoa, nome, localização. 
+ *   O sistema pode ter MUITOS tipos implementados.  (63);
+ * 
+ *   Tipos interessantes de se ter no futuro:
+ * 
+ *   63 - Pessoa
+ *   62 - Animal
+ *   61 - Mamífero
+ *   60 - Planeta
+ *   59 - Galáxia (honestamente, qualquer coisa a este ponto podia ser um subtipo do sistema)
+ *   58 - Endereço
+ *   57 - Nome
+ *   56 - Idade
+ *   55 - Peso
+ *   54 - Distância
+ *   53 - Quantia
+ *   52 - Tamanho
+ *   51 - Imagem
+ *   50 - Vídeo
+ *   49 - Áudio
+ *   48 - Bit?
+ *   47 - Tela
+ *   46 - Entidade
+ *   45 - Pixel
+ *   44 - Voxel
+ *   43 - Nutrientes
+ *   42 - Código
+ *   41 - Arquivo
+ *   40 - Tempo
+ *   39 - Sexo
+ *   38 - Cidade
+ *   37 - País
+ *   36 - Governo
+ *   35 - Espécie
+ *   34 - Comida
+ *   33 - Botão
+ *   32 - Formulário
+ *   31 - Cor
+ *   30 - Cheiro (???)
  * 
  */
 
@@ -172,7 +244,7 @@ void imprimirEndereco (void* ptr)
         printf (" ");
     }
     printf ("\n");
-}
+}   
 
 
 //////////////////////////////////////////////////
@@ -735,6 +807,15 @@ valor imprimir (valor val, ...)
 
 //////////////////////////////////////////////////
 // MAIN
+
+#define novaFuncao(nome) \
+valor nome (valor argumentos, ...) \
+{ \
+    va_list args; \
+    va_start (args, argumentos); \
+    valor resposta = novo_valor (); \
+    do \
+    {
 
 void main (void) 
 M
